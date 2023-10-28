@@ -1,0 +1,2 @@
+execute if data storage pumpkin_carving:calc error_message if entity @a run function pumpkin_carving:broadcast_error_message
+execute if score eroxified_installed pumpkin_carving.calc matches 1 run function pumpkin_carving:tick
