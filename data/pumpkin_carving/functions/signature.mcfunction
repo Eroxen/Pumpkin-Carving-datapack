@@ -1,0 +1,1 @@
+data modify storage eroxified2:api pack_signature set value {id:"pumpkin_carving",version:[2,0,0],name:"Pumpkin Carving",required_eroxified2_version:[1,0,0]}

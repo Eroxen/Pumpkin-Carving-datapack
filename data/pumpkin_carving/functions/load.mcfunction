@@ -11,10 +11,3 @@ schedule function pumpkin_carving:clock_3t 3t
 data modify storage pumpkin_carving:calc const set value {\
 rotations:{north:[180f,0f],south:[0f,0f],east:[270f,0f],west:[90f,0f]}\
 }
-
-
-### compatibility ###
-scoreboard players set eroxified_installed pumpkin_carving.calc 0
-data remove storage eroxified:compatibility installed
-schedule function pumpkin_carving:compatibility/install 1t
-schedule function pumpkin_carving:compatibility/scan 2t
