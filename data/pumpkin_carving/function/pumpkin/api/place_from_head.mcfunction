@@ -1,4 +1,4 @@
-data modify storage pumpkin_carving:calc item_data set from storage eroxified2:api phead.place.item.tag.pumpkin_data
+data modify storage pumpkin_carving:calc item_data set from storage eroxified2:api phead.place.block_components.minecraft:custom_data.pumpkin_carving.patterns
 data modify storage pumpkin_carving:calc marker_data set value {north:[],east:[],south:[],west:[]}
 scoreboard players set #temp pumpkin_carving.calc 0
 execute if entity @s[y_rotation=-135..-45] run scoreboard players set #temp pumpkin_carving.calc 1
