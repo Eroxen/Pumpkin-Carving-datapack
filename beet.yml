@@ -1,0 +1,27 @@
+name: Pumpkin Carving
+version: v3.0.0-beta1
+output: build
+
+data_pack:
+  pack_format: 81
+  description: "Spooky!\nBy Eroxen."
+  supported_formats: [80, 81]
+  zipped: false
+  load:
+    - src
+
+resource_pack:
+  pack_format: 64
+  description: "Spooky!\nBy Eroxen."
+  supported_formats: [63, 64]
+  zipped: false
+  load:
+    - src
+
+require:
+  - bolt
+  - bolt_expressions
+  - eroxified2
+
+pipeline:
+  - mecha
