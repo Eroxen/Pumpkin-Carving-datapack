@@ -1,0 +1,59 @@
+{
+  "type": "entity",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "item",
+          "weight": 1,
+          "name": "minecraft:player_head",
+          "functions": [
+            {
+              "function": "set_count",
+              "count": 1
+            },
+            {
+              "function": "set_components",
+              "components": {
+                "minecraft:profile": {
+                  "id": [
+                    907204962,
+                    -597866224,
+                    -1682899245,
+                    427282316
+                  ],
+                  "properties": [
+                    {
+                      "name": "textures",
+                      "value": "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzYzZTQwYjIwNzExMmZiOTI4YzQzMDZiZDdjMzc0NjU0NjNlNzZlZTQ2OGJlYjEzZDQ1MjBhMTViZjM3YzhmMyJ9fX0="
+                    }
+                  ]
+                },
+                "minecraft:custom_data": {
+                  "eroxified2": {
+                    "phead": {
+                      "detect": true,
+                      "id": "pumpkin_carving:custom_carved_pumpkin",
+                      "place": {
+                        "function": "pumpkin_carving:pumpkin/api/place_from_head"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "function": "minecraft:set_name",
+              "target": "item_name",
+              "name": {
+                "translate": "item.pumpkin_carving.custom_carved_pumpkin",
+                "italic": false
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

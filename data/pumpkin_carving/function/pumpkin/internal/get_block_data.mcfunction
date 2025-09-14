@@ -1,0 +1,2 @@
+scoreboard players set #byte pumpkin_carving.calc 255
+$execute on passengers if entity @s[type=marker] if data entity @s data.$(face)[$(block)] store result score #byte pumpkin_carving.calc run data get entity @s data.$(face)[$(block)] 1

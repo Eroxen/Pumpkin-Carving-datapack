@@ -1,0 +1,1 @@
+execute if score proposals_exist pumpkin_carving.calc matches 1 run function pumpkin_carving:proposal/tick

@@ -1,0 +1,3 @@
+tellraw @s ["",{"text":"[Pumpkin Carving] ","color":"light_purple"},{"text":"Are you sure you want to uninstall Pumpkin Carving from your world? This will delete all custom pumpkins.","color":"red"}]
+
+tellraw @s {"clickEvent":{"action":"run_command","value":"/function pumpkin_carving:util/uninstall/confirm"},"hoverEvent":{"action":"show_text","value":[{"text":"Click to confirm"}]},"text":"[Uninstall]","color":"aqua","underlined":true}
