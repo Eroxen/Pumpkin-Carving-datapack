@@ -4,7 +4,7 @@ output: build
 
 data_pack:
   pack_format: 81
-  description: "Spooky!\nBy Eroxen."
+  description: "Carve your own custom pumpkins!\nBy Eroxen."
   supported_formats: [80, 81]
   zipped: false
   load:
@@ -12,7 +12,7 @@ data_pack:
 
 resource_pack:
   pack_format: 64
-  description: "Spooky!\nBy Eroxen."
+  description: "Carve your own custom pumpkins!\nBy Eroxen."
   supported_formats: [63, 64]
   zipped: false
   load:
