@@ -1,2 +1,0 @@
-function pumpkin_carving:signature
-function eroxified2:core/api/submit_signature
