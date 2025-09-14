@@ -25,3 +25,4 @@ require:
 
 pipeline:
   - mecha
+  - plugins.generate_models
