@@ -2,10 +2,16 @@ from eroxified2:custom_block import CustomBlock, PlacedBlockBarrier
 from eroxified2:custom_item import CustomItem, transformer
 from eroxified2:core import run_at_pack_tick
 from eroxified2:interaction import call_on_lclick, call_on_rclick
-from bolt_expressions import Scoreboard
+from bolt_expressions import Scoreboard, Data
+from plugins.generate_models import ModelOrdering
 SCORE = Scoreboard("pumpkin_carving.calc")
+NBT = Data.storage("pumpkin_carving:calc")
 
 HERE = ~/
+
+default_voxel_ds = {}
+for group in ModelOrdering.main_groups:
+  default_voxel_ds[group.name] = [True] * group.volume
 
 class CustomPumpkin(CustomItem):
   base_item = "crafter"
@@ -29,7 +35,11 @@ class CustomPumpkin(CustomItem):
     }
   ]
   custom_model_data = {
-    "flags": [True] * (16*16*4)
+    "flags": [True] * ModelOrdering.total_volume,
+    "strings": ["full"] * len(ModelOrdering.main_groups)
+  }
+  custom_data = {
+    "voxels": default_voxel_ds
   }
 
   @transformer('lore', [])
@@ -44,14 +54,37 @@ class CustomPumpkinBlock(CustomBlock):
   def on_placed(cls):
     say @p[tag=eroxified2.custom_block.placer]
 
-    summon item_display ~ ~ ~ {Tags:["pumpkin_carving.entity","pumpkin_carving.custom_pumpkin","pumpkin_carving.custom_pumpkin.display"]}
-    loot replace entity @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1] contents loot cls.item.loot_table
-    particle flame
+    summon item_display ~ ~ ~ {Rotation:[180f,0f],Tags:["pumpkin_carving.entity","pumpkin_carving.custom_pumpkin","pumpkin_carving.custom_pumpkin.display"]}
+    execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
+      loot replace entity @s contents loot cls.item.loot_table
+      data modify entity @s data.voxels set from storage eroxified2:api custom_block.placed.components."minecraft:custom_data".voxels
+      function f"{HERE}/voxels_to_model"
 
   def on_broken(cls):
-    particle soul_fire_flame
-    kill @e[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]
-    loot spawn ~ ~ ~ loot cls.item.loot_table
+    execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
+      loot replace entity @s contents loot cls.item.loot_table
+      function f"{HERE}/voxels_to_model"
+      Data.entity("@s").item.components."minecraft:custom_data".voxels = Data.entity("@s").data.voxels
+      with entity @s item:
+        $loot spawn ~ ~ ~ loot {pools:[{rolls:1,entries:[{type:"minecraft:item",name:"$(id)",functions:[{function:"minecraft:set_components",components:$(components)}]}]}]}
+      kill @s
+
+function ~/voxels_to_model:
+  NBT.temp = {flags:[],strings:[]}
+  NBT.temp.voxels = Data.entity("@s").data.voxels
+  for group in ModelOrdering.main_groups:
+    NBT.temp.flags.append(NBT.temp.voxels[group.name][])
+    NBT.temp.fill_level = "full"
+    execute if data storage pumpkin_carving:calc f"temp.voxels{{{group.name}:[0b]}}":
+      NBT.temp.fill_level = "empty"
+      execute if data storage pumpkin_carving:calc f"temp.voxels{{{group.name}:[1b]}}":
+        NBT.temp.fill_level = "mixed"
+    NBT.temp.strings.append(NBT.temp.fill_level)
+  Data.entity("@s").item.components."minecraft:custom_model_data".flags = NBT.temp.flags
+  Data.entity("@s").item.components."minecraft:custom_model_data".strings = NBT.temp.strings
+  
+
+
 
 def lenient_tag(items):
   values = []
