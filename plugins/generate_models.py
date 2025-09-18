@@ -43,16 +43,48 @@ class VoxelGroup:
     self.min = np.array([xmin, ymin, zmin])
     self.max = np.array([xmax, ymax, zmax])
     self.name = name
+
+    self.children = None
+    size = self.max - self.min
+    if np.prod(size) > 2:
+      longest_axis = np.argmax(size)
+      longest_size = size[longest_axis]
+      # split along longest axis
+      splits = 2
+      if longest_size == 12:
+        splits = 3
+      split_length = longest_size // splits
+      children = []
+      for i in range(splits):
+        child_min = self.min.copy()
+        child_min[longest_axis] = self.min[longest_axis] + i * split_length
+        child_max = self.max.copy()
+        child_max[longest_axis] = self.min[longest_axis] + (i+1) * split_length
+        children.append(VoxelGroup(*child_min, *child_max, f"{self.name}.{i}"))
+      self.children = children
   
   @property
   def volume(self):
-    return np.prod(self.max - self.min)
+    return int(np.prod(self.max - self.min))
+  
+  def _num_descendants(self):
+    if self.children is None:
+      return 1
+    return 1 + sum([c._num_descendants() for c in self.children])
+  
+  @property
+  def num_descendants(self):
+    return sum([c._num_descendants() for c in self.children])
   
   def size(self, axis):
     return int(self.max[axis] - self.min[axis])
   
   def voxel_bounds(self, axis):
     return (int(self.min[axis]), int(self.max[axis]-1))
+  
+  def index_of_voxel(self, x, y, z):
+    i = int(self.size(0) * self.size(1) * (z - self.min[2]) + self.size(0) * (y - self.min[1]) + (x - self.min[0]))
+    return i
   
   @property
   def bounds(self):
@@ -68,26 +100,29 @@ class VoxelGroup:
         for x in np.arange(self.min[0], self.max[0]):
           yield int(x), int(y), int(z)
   
-  def generate_composite_model(self, draft, flag_offset, string_offset):
-    flags = 0
-    strings = 1
-
+  def _generate_composite_model(self, draft, flag_offset, string_offset, top_group):
     child_models = []
-    for x, y, z in self.iterate_voxels():
-      child_models.append({
-        "type": "minecraft:condition",
-        "property": "minecraft:custom_model_data",
-        "index": flags + flag_offset,
-        "on_true": {
-          "type": "minecraft:model",
-          "model": generate_voxel_model(draft, x, y, z, x+1, y+1, z+1)
-        },
-        "on_false": {
-          "type": "minecraft:empty"
-        }
-      })
-      flags += 1
-
+    if self.children is None:
+      # children are single voxels
+      for x, y, z in self.iterate_voxels():
+        child_models.append({
+          "type": "minecraft:condition",
+          "property": "minecraft:custom_model_data",
+          "index": flag_offset + top_group.index_of_voxel(x, y, z),
+          "on_true": {
+            "type": "minecraft:model",
+            "model": generate_voxel_model(draft, x, y, z, x+1, y+1, z+1)
+          },
+          "on_false": {
+            "type": "minecraft:empty"
+          }
+        })
+    else:
+      # children are subgroups
+      for child in self.children:
+        child_model, flag_offset, string_offset = child._generate_composite_model(draft, flag_offset, string_offset, top_group)
+        child_models.append(child_model)
+    
     main_model = {
       "type": "minecraft:select",
       "property": "minecraft:custom_model_data",
@@ -112,7 +147,43 @@ class VoxelGroup:
         "type": "minecraft:empty"
       }
     }
-    return main_model, flag_offset+flags, string_offset+strings
+    string_offset += 1
+    return main_model, flag_offset, string_offset
+  
+  def generate_composite_model(self, draft, flag_offset, string_offset):
+    child_models = []
+    old_string_offset = string_offset
+    string_offset += 1
+    for child in self.children:
+      child_model, flag_offset, string_offset = child._generate_composite_model(draft, flag_offset, string_offset, self)
+      child_models.append(child_model)
+
+    main_model = {
+      "type": "minecraft:select",
+      "property": "minecraft:custom_model_data",
+      "index": old_string_offset,
+      "cases": [
+        {
+          "when": "full",
+          "model": {
+            "type": "minecraft:model",
+            "model": generate_voxel_model(draft, *self.bounds)
+          }
+        },
+        {
+          "when": "mixed",
+          "model": {
+            "type": "minecraft:composite",
+            "models": child_models
+          }
+        }
+      ],
+      "fallback": {
+        "type": "minecraft:empty"
+      }
+    }
+    flag_offset += self.volume
+    return main_model, flag_offset, string_offset
 
 def generate_main_groups():
   bounds = [(0,2),(2,14),(14,16)]
@@ -131,11 +202,9 @@ class ModelOrdering:
   total_volume = np.sum([g.volume for g in main_groups])
 
 
-
-
 def beet_default(ctx):
   with ctx.generate.draft() as draft:
-    # draft.cache("pumpkin_models", "v1")
+    draft.cache("pumpkin_models", "v3")
     print("Generating!")
 
     draft.assets["pumpkin_carving:item/pumpkin"] = Model({

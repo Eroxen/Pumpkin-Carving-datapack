@@ -4,10 +4,25 @@ from eroxified2:core import run_at_pack_tick
 from eroxified2:interaction import call_on_lclick, call_on_rclick
 from bolt_expressions import Scoreboard, Data
 from plugins.generate_models import ModelOrdering
+from bolt_expressions.sources import ScoreSource, DataSource
 SCORE = Scoreboard("pumpkin_carving.calc")
 NBT = Data.storage("pumpkin_carving:calc")
 
 HERE = ~/
+
+DEBUG = True
+def debug(*args, color="yellow"):
+  if DEBUG:
+    message = [{"text":"[Debug]","color":color}]
+    for arg in args:
+      message.append(" ")
+      if isinstance(arg, ScoreSource):
+        message.append({"score":{"name":arg.holder,"objective":arg.objective}})
+      elif isinstance(arg, DataSource):
+        message.append(arg.component())
+      else:
+        message.append(arg)
+    tellraw @a message
 
 default_voxel_ds = {}
 for group in ModelOrdering.main_groups:
@@ -69,7 +84,52 @@ class CustomPumpkinBlock(CustomBlock):
         $loot spawn ~ ~ ~ loot {pools:[{rolls:1,entries:[{type:"minecraft:item",name:"$(id)",functions:[{function:"minecraft:set_components",components:$(components)}]}]}]}
       kill @s
 
+
+def traverse_tree(group, top_group, level):
+  if group.children is None:
+    j = 0
+    for x, y, z in group.iterate_voxels():
+      # this should always be just 2 voxels
+      i = top_group.index_of_voxel(x, y, z)
+      execute store result score f"#temp.{j}" pumpkin_carving.calc run data get storage pumpkin_carving:calc f"temp.group_voxels[{i}]"
+      j += 1
+    SCORE["#temp.0"] += SCORE["#temp.1"]
+    if SCORE["#temp.0"] == 0:
+      NBT.temp.stack[-1].foo.bar.append("empty")
+    if SCORE["#temp.0"] == 1:
+      NBT.temp.stack[-1].foo.bar.append("mixed")
+    if SCORE["#temp.0"] == 2:
+      NBT.temp.stack[-1].foo.bar.append("full")
+    NBT.temp.tree.append(NBT.temp.stack[-1].foo.bar[-1])
+  else:
+    NBT.temp.stack.append({"foo":{"bar":[]}})
+    for child in group.children:
+      traverse_tree(child, top_group, level+1)
+    if not level == 0:
+      execute if data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["full"]} unless data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["empty"]} unless data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["mixed"]}:
+        NBT.temp.stack[-2].foo.bar.append("full")
+      execute if data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["empty"]} unless data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["full"]} unless data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["mixed"]}:
+        NBT.temp.stack[-2].foo.bar.append("empty")
+      execute if data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["full","empty"]} unless data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["mixed"]}:
+        NBT.temp.stack[-2].foo.bar.append("mixed")
+      execute if data storage pumpkin_carving:calc temp.stack[-1].foo{bar:["mixed"]}:
+        NBT.temp.stack[-2].foo.bar.append("mixed")
+      NBT.temp.tree.append(NBT.temp.stack[-2].foo.bar[-1])
+      data remove var NBT.temp.stack[-1]
+
 function ~/voxels_to_model:
+  memo_key = "voxels_to_model_shapes_4"
+  memo memo_key:
+    seen_shapes = set()
+    for group in ModelOrdering.main_groups:
+      group_shape = f"{group.size(0)}_{group.size(1)}_{group.size(2)}"
+      if group_shape not in seen_shapes:
+        seen_shapes.add(group_shape)
+        function f"{~/}/shape_{group_shape}":
+          NBT.temp.tree = []
+          NBT.temp.stack = [{"foo":{"bar":[]}}]
+          traverse_tree(group, group, 0)
+
   NBT.temp = {flags:[],strings:[]}
   NBT.temp.voxels = Data.entity("@s").data.voxels
   for group in ModelOrdering.main_groups:
@@ -80,6 +140,15 @@ function ~/voxels_to_model:
       execute if data storage pumpkin_carving:calc f"temp.voxels{{{group.name}:[1b]}}":
         NBT.temp.fill_level = "mixed"
     NBT.temp.strings.append(NBT.temp.fill_level)
+    if NBT.temp.fill_level == "full":
+      NBT.temp.tree = ["full"] * group.num_descendants
+    if NBT.temp.fill_level == "empty":
+      NBT.temp.tree = ["empty"] * group.num_descendants
+    if NBT.temp.fill_level == "mixed":
+      NBT.temp.group_voxels = NBT.temp.voxels[group.name]
+      group_shape = f"{group.size(0)}_{group.size(1)}_{group.size(2)}"
+      function f"{~/}/shape_{group_shape}"
+    NBT.temp.strings.append(NBT.temp.tree[])
   Data.entity("@s").item.components."minecraft:custom_model_data".flags = NBT.temp.flags
   Data.entity("@s").item.components."minecraft:custom_model_data".strings = NBT.temp.strings
   

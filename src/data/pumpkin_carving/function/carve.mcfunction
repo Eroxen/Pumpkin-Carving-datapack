@@ -6,7 +6,7 @@ SCORE = Scoreboard("pumpkin_carving.calc")
 FSCALE = 1000
 NBT = Data.storage("pumpkin_carving:calc")
 
-DEBUG = True
+DEBUG = False
 def debug(*args, color="yellow"):
   if DEBUG:
     message = [{"text":"[Debug]","color":color}]
