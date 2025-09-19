@@ -120,6 +120,7 @@ def traverse_tree(group, top_group, level):
 function ~/voxels_to_model:
   memo_key = "voxels_to_model_shapes_4"
   memo memo_key:
+    print("Generating model trees")
     seen_shapes = set()
     for group in ModelOrdering.main_groups:
       group_shape = f"{group.size(0)}_{group.size(1)}_{group.size(2)}"
@@ -149,6 +150,15 @@ function ~/voxels_to_model:
       group_shape = f"{group.size(0)}_{group.size(1)}_{group.size(2)}"
       function f"{~/}/shape_{group_shape}"
     NBT.temp.strings.append(NBT.temp.tree[])
+  execute unless data storage pumpkin_carving:calc temp{flags:[1b]} run return:
+    # all pixels were carved away
+    execute align y positioned ~ ~-0.005 ~ as @n[type=interaction,tag=pumpkin_carving.carving_hitbox,distance=..0.1] on target:
+      advancement grant @s only pumpkin_carving:gone_reduced_to_atoms
+    kill @s
+    execute align xyz positioned ~0.5 ~0.5 ~0.5 run kill @e[type=marker,tag=pumpkin_carving.custom_pumpkin.root,distance=..0.1]
+    setblock ~ ~ ~ air
+    particle poof ~ ~ ~ 0.2 0.2 0.2 0 5
+    loot spawn ~ ~ ~ loot pumpkin_carving:item/pumpkinos
   Data.entity("@s").item.components."minecraft:custom_model_data".flags = NBT.temp.flags
   Data.entity("@s").item.components."minecraft:custom_model_data".strings = NBT.temp.strings
   
@@ -193,7 +203,19 @@ predicate ~/interactable_carve_new {
     }
   }
 }
-item_tag ~/interactable_carve lenient_tag([f"#{~/interactable_carve_new}"] + tools("minecraft:%_axe"))
+item_tag ~/interactable_carve_big lenient_tag(tools("minecraft:%_axe"))
+predicate ~/interactable_carve_big {
+  "condition": "minecraft:entity_properties",
+  "entity": "this",
+  "predicate": {
+    "equipment": {
+      "mainhand": {
+        "items": f"#{~/interactable_carve_big}"
+      }
+    }
+  }
+}
+item_tag ~/interactable_carve lenient_tag([f"#{~/interactable_carve_new}", f"#{~/interactable_carve_big}"])
 predicate ~/interactable_carve {
   "condition": "minecraft:entity_properties",
   "entity": "this",
@@ -283,7 +305,9 @@ function ~/hitbox:
       SCORE["@n[type=interaction,tag=pumpkin_carving.carving_hitbox,distance=..0.1]"] = 20
       execute align y positioned ~ ~1.5 ~:
         execute if block ~ ~ ~ minecraft:pumpkin run function pumpkin_carving:carve/init
-        execute if predicate f"{HERE}/interactable_carve" run function pumpkin_carving:carve/carve
+        execute if predicate f"{HERE}/interactable_carve":
+          execute if predicate f"{HERE}/interactable_carve_big" run return run function pumpkin_carving:carve/carve_big
+          function pumpkin_carving:carve/carve
         execute if predicate f"{HERE}/interactable_fill" run function pumpkin_carving:carve/fill
 
   function ~/tick:

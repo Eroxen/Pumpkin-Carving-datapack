@@ -205,7 +205,7 @@ class ModelOrdering:
 def beet_default(ctx):
   with ctx.generate.draft() as draft:
     draft.cache("pumpkin_models", "v3")
-    print("Generating!")
+    print("Generating models")
 
     draft.assets["pumpkin_carving:item/pumpkin"] = Model({
       "parent": "minecraft:block/block",
