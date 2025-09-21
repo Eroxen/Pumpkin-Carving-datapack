@@ -67,15 +67,17 @@ class CustomPumpkinBlock(CustomBlock):
   entity_tags = ["pumpkin_carving.entity","pumpkin_carving.custom_pumpkin","pumpkin_carving.custom_pumpkin.root"]
 
   def on_placed(cls):
-    say @p[tag=eroxified2.custom_block.placer]
-
-    summon item_display ~ ~ ~ {Rotation:[180f,0f],Tags:["pumpkin_carving.entity","pumpkin_carving.custom_pumpkin","pumpkin_carving.custom_pumpkin.display"]}
+    NBT.macro = {x_rot: Scoreboard("eroxified2.api")["custom_block.x_rotation"], y_rot: Scoreboard("eroxified2.api")["custom_block.y_rotation"]}
+    with var NBT.macro:
+      $summon item_display ~ ~ ~ {Rotation:[$(y_rot)f,$(x_rot)f],Tags:["pumpkin_carving.entity","pumpkin_carving.custom_pumpkin","pumpkin_carving.custom_pumpkin.display"],width:1f,height:1f}
     execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
       loot replace entity @s contents loot cls.item.loot_table
       data modify entity @s data.voxels set from storage eroxified2:api custom_block.placed.components."minecraft:custom_data".voxels
       function f"{HERE}/voxels_to_model"
 
   def on_broken(cls):
+    playsound minecraft:block.wood.break block @a[distance=..16] ~ ~ ~ 1 0.8
+    particle minecraft:block{block_state:{Name:"minecraft:pumpkin"}} ~ ~ ~ 0.3 0.3 0.3 0 16
     execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
       loot replace entity @s contents loot cls.item.loot_table
       function f"{HERE}/voxels_to_model"
@@ -271,12 +273,12 @@ raycaststop = f"#{~/raycast_stop}"
 function ~/tick:
   run_at_pack_tick()
   execute as @a[predicate=(~/../interactable)] at @s anchored eyes positioned ^ ^ ^0.5 run function ~/raycast:
-    SCORE["#raycast"] = 20
+    SCORE["#raycast"] = 40
     execute run function ~/loop:
       execute if block ~ ~ ~ raycaststop align xyz positioned ~0.5 ~0.5 ~0.5 run return run function ~/../hit
       SCORE["#raycast"] -= 1
       if SCORE["#raycast"] > 0:
-        execute positioned ^ ^ ^0.25 run function ~/
+        execute positioned ^ ^ ^0.1 run function ~/
     function ~/hit:
       execute if block ~ ~ ~ minecraft:barrier unless entity @e[type=marker,tag=pumpkin_carving.custom_pumpkin.root,distance=..0.1,limit=1] run return fail
       execute if block ~ ~ ~ minecraft:pumpkin unless predicate f"{HERE}/interactable_carve_new" run return fail
@@ -313,6 +315,7 @@ function ~/hitbox:
   function ~/tick:
     SCORE["#temp"] = 0
     execute as @e[type=interaction,tag=pumpkin_carving.carving_hitbox] at @s:
+      execute unless entity @a[predicate=(~/../../interactable),distance=..8,limit=1] run return run kill @s
       SCORE["@s"] -= 1
       if SCORE["@s"] < 0:
         kill @s

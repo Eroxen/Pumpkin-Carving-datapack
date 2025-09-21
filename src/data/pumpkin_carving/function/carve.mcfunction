@@ -21,7 +21,27 @@ def debug(*args, color="yellow"):
     tellraw @a message
 
 function ~/init:
+  function ~/../raycast/init
+  function ~/../raycast/get_first_hit_plane
   setblock ~ ~ ~ crafter{components:CustomPumpkin.components}
+  if SCORE["#raycast.next_plane"] == 0:
+    if SCORE["#raycast.dir.0"] == 1:
+      setblock ~ ~ ~ crafter[orientation=west_up]
+  if SCORE["#raycast.next_plane"] == 0:
+    if SCORE["#raycast.dir.0"] == -1:
+      setblock ~ ~ ~ crafter[orientation=east_up]
+  if SCORE["#raycast.next_plane"] == 2:
+    if SCORE["#raycast.dir.2"] == 1:
+      setblock ~ ~ ~ crafter[orientation=north_up]
+  if SCORE["#raycast.next_plane"] == 2:
+    if SCORE["#raycast.dir.2"] == -1:
+      setblock ~ ~ ~ crafter[orientation=south_up]
+  if SCORE["#raycast.next_plane"] == 1:
+    execute if entity @s[y_rotation=45..135] run setblock ~ ~ ~ crafter[orientation=east_up]
+    execute if entity @s[y_rotation=135..225] run setblock ~ ~ ~ crafter[orientation=south_up]
+    execute if entity @s[y_rotation=225..315] run setblock ~ ~ ~ crafter[orientation=west_up]
+    execute if entity @s[y_rotation=-45..45] run setblock ~ ~ ~ crafter[orientation=north_up]
+
   function f"{CustomPumpkinBlock.func_root}/detect_placed/found_block"
 
 function ~/carve:
@@ -74,6 +94,11 @@ function ~/fill:
     with var NBT.macro:
       $data modify entity @s data.voxels.$(group)[$(i)] set value true
     function pumpkin_carving:pumpkin/voxels_to_model
+    execute unless data storage pumpkin_carving:calc temp{flags:[0b]} run return:
+      # all pixels were filled
+      kill @s
+      execute align xyz positioned ~0.5 ~0.5 ~0.5 run kill @e[type=marker,tag=pumpkin_carving.custom_pumpkin.root,distance=..0.1]
+      setblock ~ ~ ~ pumpkin
 
 function ~/get_macro:
   debug("get macro", SCORE[f"#raycast.hit_voxel.0"], SCORE[f"#raycast.hit_voxel.1"], SCORE[f"#raycast.hit_voxel.2"])
@@ -100,14 +125,98 @@ function ~/raycast:
       NBT.raycast.p2 = Data.entity("@s").Pos
       kill @s
   
+  function ~/get_first_hit_plane:
+    execute summon marker:
+      NBT.raycast.origin = Data.entity("@s").Pos
+      kill @s
+    for i in range(3):
+      SCORE[f"#raycast.dir_vec.{i}"] = (FSCALE * NBT.raycast.p2[i] - FSCALE * NBT.raycast.p1[i])
+      SCORE[f"#raycast.ray_start.{i}"] = (FSCALE * NBT.raycast.p1[i] - FSCALE * NBT.raycast.origin[i])
+      if SCORE[f"#raycast.dir_vec.{i}"] < 0:
+        SCORE[f"#raycast.dir.{i}"] = -1
+      else:
+        SCORE[f"#raycast.dir.{i}"] = 1
+      SCORE[f"#raycast.next_plane.{i}"] = int(FSCALE * -0.5) * SCORE[f"#raycast.dir.{i}"]
+      SCORE[f"#raycast.current.{i}"] = SCORE[f"#raycast.ray_start.{i}"]
+      for j in exclude(i):
+        SCORE[f"#raycast.next_plane.{i}.min.{j}"] = int(FSCALE * -0.5)
+        SCORE[f"#raycast.next_plane.{i}.max.{j}"] = int(FSCALE * 0.5)
+    function ~/../step
+    
+  
   function ~/start:
     NBT.raycast.origin = Data.entity("@s").Pos
     NBT.raycast.voxels = Data.entity("@s").data.voxels
     SCORE[f"#raycast.hit"] = 0
     for i in range(3):
-      SCORE[f"#raycast.dir_vec.{i}"] = FSCALE * NBT.raycast.p2[i] - FSCALE * NBT.raycast.p1[i]
-      SCORE[f"#raycast.origin.{i}"] = FSCALE * NBT.raycast.origin[i]
-      SCORE[f"#raycast.ray_start.{i}"] = FSCALE * NBT.raycast.p1[i] - SCORE[f"#raycast.origin.{i}"]
+      SCORE[f"#raycast._dir_vec.{i}"] = (FSCALE * NBT.raycast.p2[i] - FSCALE * NBT.raycast.p1[i])
+      SCORE[f"#raycast._ray_start.{i}"] = (FSCALE * NBT.raycast.p1[i] - FSCALE * NBT.raycast.origin[i])
+    
+    SCORE["#raycast.y_rot"] = (Data.entity("@s").Rotation[0] / 90) % 4
+    SCORE["#raycast.x_rot"] = Data.entity("@s").Rotation[1] / 90
+    def set_transform(nx, ny, nz):
+      if nx < 0:
+        SCORE["#raycast.dir_vec.0"] = SCORE[f"#raycast._dir_vec.{(-nx-1)}"] * -1
+        SCORE["#raycast.ray_start.0"] = SCORE[f"#raycast._ray_start.{(-nx-1)}"] * -1
+      else:
+        SCORE["#raycast.dir_vec.0"] = SCORE[f"#raycast._dir_vec.{nx-1}"]
+        SCORE["#raycast.ray_start.0"] = SCORE[f"#raycast._ray_start.{nx-1}"]
+      if ny < 0:
+        SCORE["#raycast.dir_vec.1"] = SCORE[f"#raycast._dir_vec.{(-ny-1)}"] * -1
+        SCORE["#raycast.ray_start.1"] = SCORE[f"#raycast._ray_start.{(-ny-1)}"] * -1
+      else:
+        SCORE["#raycast.dir_vec.1"] = SCORE[f"#raycast._dir_vec.{ny-1}"]
+        SCORE["#raycast.ray_start.1"] = SCORE[f"#raycast._ray_start.{ny-1}"]
+      if nz < 0:
+        SCORE["#raycast.dir_vec.2"] = SCORE[f"#raycast._dir_vec.{(-nz-1)}"] * -1
+        SCORE["#raycast.ray_start.2"] = SCORE[f"#raycast._ray_start.{(-nz-1)}"] * -1
+      else:
+        SCORE["#raycast.dir_vec.2"] = SCORE[f"#raycast._dir_vec.{nz-1}"]
+        SCORE["#raycast.ray_start.2"] = SCORE[f"#raycast._ray_start.{nz-1}"]
+
+    debug("transform:", SCORE["#raycast.x_rot"], SCORE["#raycast.y_rot"])
+    if SCORE["#raycast.y_rot"] == 0:
+      if SCORE["#raycast.x_rot"] == 0:
+        set_transform(-1, 2, -3)
+    if SCORE["#raycast.y_rot"] == 1:
+      if SCORE["#raycast.x_rot"] == 0:
+        set_transform(-3, 2, 1)
+    if SCORE["#raycast.y_rot"] == 2:
+      if SCORE["#raycast.x_rot"] == 0:
+        set_transform(1, 2, 3)
+    if SCORE["#raycast.y_rot"] == 3:
+      if SCORE["#raycast.x_rot"] == 0:
+        set_transform(3, 2, -1)
+    
+    if SCORE["#raycast.y_rot"] == 0:
+      if SCORE["#raycast.x_rot"] == -1:
+        set_transform(-1, -3, -2)
+    if SCORE["#raycast.y_rot"] == 1:
+      if SCORE["#raycast.x_rot"] == -1:
+        set_transform(-3, 1, -2)
+    if SCORE["#raycast.y_rot"] == 2:
+      if SCORE["#raycast.x_rot"] == -1:
+        set_transform(1, 3, -2)
+    if SCORE["#raycast.y_rot"] == 3:
+      if SCORE["#raycast.x_rot"] == -1:
+        set_transform(3, -1, -2)
+    
+    if SCORE["#raycast.y_rot"] == 0:
+      if SCORE["#raycast.x_rot"] == 1:
+        set_transform(-1, 3, 2)
+    if SCORE["#raycast.y_rot"] == 1:
+      if SCORE["#raycast.x_rot"] == 1:
+        set_transform(-3, -1, 2)
+    if SCORE["#raycast.y_rot"] == 2:
+      if SCORE["#raycast.x_rot"] == 1:
+        set_transform(1, -3, 2)
+    if SCORE["#raycast.y_rot"] == 3:
+      if SCORE["#raycast.x_rot"] == 1:
+        set_transform(3, 1, 2)
+
+
+
+    for i in range(3):
       if SCORE[f"#raycast.dir_vec.{i}"] < 0:
         SCORE[f"#raycast.dir.{i}"] = -1
       else:

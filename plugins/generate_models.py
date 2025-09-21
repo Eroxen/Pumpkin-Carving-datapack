@@ -204,7 +204,7 @@ class ModelOrdering:
 
 def beet_default(ctx):
   with ctx.generate.draft() as draft:
-    draft.cache("pumpkin_models", "v3")
+    # draft.cache("pumpkin_models", "v3")
     print("Generating models")
 
     draft.assets["pumpkin_carving:item/pumpkin"] = Model({
@@ -215,6 +215,13 @@ def beet_default(ctx):
         "2": "pumpkin_carving:block/pumpkin_inside_side",
         "3": "pumpkin_carving:block/pumpkin_inside_top",
         "4": "pumpkin_carving:block/pumpkin_slice"
+      },
+      "display": {
+        "head": {
+            "rotation": [ 0, 0, 0 ],
+            "translation": [ 0, 0, 0],
+            "scale":[ 1.05, 1.05, 1.05 ]
+        }
       }
     })
 
