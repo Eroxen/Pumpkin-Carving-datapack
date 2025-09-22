@@ -4,17 +4,17 @@ output: build
 
 data_pack:
   pack_format: 81
-  description: "Carve your own custom pumpkins!\nBy Eroxen."
+  description: "Carve custom pumpkins!\nBy Eroxen."
   supported_formats: [80, 81]
-  zipped: false
+  zipped: true
   load:
     - src
 
 resource_pack:
   pack_format: 64
-  description: "Carve your own custom pumpkins!\nBy Eroxen."
+  description: "Carve custom pumpkins!\nBy Eroxen."
   supported_formats: [63, 64]
-  zipped: false
+  zipped: true
   load:
     - src
 

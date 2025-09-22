@@ -1,0 +1,62 @@
+{
+  "type": "minecraft:multi_action",
+  "title": "Pumpkin Carving",
+  "after_action": "none",
+  "pause": false,
+  "body": [
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:carved_pumpkin"
+      }
+    }
+  ],
+  "columns": 2,
+  "actions": [
+    {
+      "label": "Download Page",
+      "action": {
+        "type": "minecraft:open_url",
+        "url": "https://modrinth.com/datapack/pumpkin-carving"
+      }
+    },
+    {
+      "label": {
+        "text": "Support me on Ko-fi ",
+        "extra": [
+          {
+            "text": "❤",
+            "color": "red"
+          }
+        ]
+      },
+      "action": {
+        "type": "minecraft:open_url",
+        "url": "https://ko-fi.com/eroxen"
+      }
+    },
+    {
+      "label": {
+        "translate": "gui.stats"
+      },
+      "action": {
+        "type": "minecraft:run_command",
+        "command": "/trigger pumpkin_carving.dialog set 101"
+      }
+    },
+    {
+      "label": "Report an Issue",
+      "action": {
+        "type": "minecraft:show_dialog",
+        "dialog": "pumpkin_carving:report_an_issue"
+      }
+    },
+    {
+      "label": "In-Game Wiki",
+      "action": {
+        "type": "minecraft:show_dialog",
+        "dialog": "pumpkin_carving:wiki"
+      }
+    }
+  ]
+}

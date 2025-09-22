@@ -6,7 +6,7 @@ SCORE = Scoreboard("pumpkin_carving.calc")
 FSCALE = 1000
 NBT = Data.storage("pumpkin_carving:calc")
 
-DEBUG = False
+DEBUG = True
 def debug(*args, color="yellow"):
   if DEBUG:
     message = [{"text":"[Debug]","color":color}]
@@ -44,7 +44,18 @@ function ~/init:
 
   function f"{CustomPumpkinBlock.func_root}/detect_placed/found_block"
 
+  Scoreboard("pumpkin_carving.stats.pumpkins_carved")["@s"] += 1
+
+function ~/carved_success:
+  Scoreboard("pumpkin_carving.stats.voxels_carved")["@s"] += SCORE[f"#voxels_changed"]
+  playsound minecraft:block.pumpkin.carve block @a[distance=..8]
+
+function ~/filled_success:
+  Scoreboard("pumpkin_carving.stats.voxels_filled")["@s"] += SCORE[f"#voxels_changed"]
+  playsound minecraft:block.mud.place block @a[distance=..8]
+
 function ~/carve:
+  SCORE["#voxels_changed"] = 0
   function ~/../raycast/init
   execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
     function ~/../raycast/start
@@ -52,17 +63,19 @@ function ~/carve:
       execute run return fail
     function ~/../get_macro
     with var NBT.macro:
-      $data modify entity @s data.voxels.$(group)[$(i)] set value false
+      $execute store success score #temp pumpkin_carving.calc run data modify entity @s data.voxels.$(group)[$(i)] set value false
+    SCORE["#voxels_changed"] += SCORE["#temp"]
     function pumpkin_carving:pumpkin/voxels_to_model
+  if SCORE["#voxels_changed"] > 0:
+    function ~/../carved_success
 
 function ~/carve_big:
-  debug("carve big")
+  SCORE[f"#voxels_changed"] = 0
   function ~/../raycast/init
   execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
     function ~/../raycast/start
     if SCORE[f"#raycast.hit"] == 0:
       execute run return fail
-    debug("a")
     function ~/../raycast/align_big
     for dx in range(2):
       SCORE[f"#raycast.hit_voxel.0"] = SCORE[f"#raycast.hit_voxel_ref.0"] + dx
@@ -70,18 +83,20 @@ function ~/carve_big:
         SCORE[f"#raycast.hit_voxel.1"] = SCORE[f"#raycast.hit_voxel_ref.1"] + dy
         for dz in range(2):
           SCORE[f"#raycast.hit_voxel.2"] = SCORE[f"#raycast.hit_voxel_ref.2"] + dz
-          debug("big", dx, dy, dz)
           execute if score #raycast.hit_voxel.0 pumpkin_carving.calc matches 0..15 if score #raycast.hit_voxel.1 pumpkin_carving.calc matches 0..15 if score #raycast.hit_voxel.2 pumpkin_carving.calc matches 0..15:
             function ~/carve_voxel
     function pumpkin_carving:pumpkin/voxels_to_model
   function ~/carve_voxel:
     execute if score #raycast.hit_voxel.0 pumpkin_carving.calc matches 2..13 if score #raycast.hit_voxel.1 pumpkin_carving.calc matches 2..13 if score #raycast.hit_voxel.2 pumpkin_carving.calc matches 2..13 run return fail
     function ~/../../get_macro
-    debug(NBT.macro)
     with var NBT.macro:
-      $data modify entity @s data.voxels.$(group)[$(i)] set value false
+      $execute store success score #temp pumpkin_carving.calc run data modify entity @s data.voxels.$(group)[$(i)] set value false
+    SCORE[f"#voxels_changed"] += SCORE[f"#temp"]
+  if SCORE["#voxels_changed"] > 0:
+    function ~/../carved_success
 
 function ~/fill:
+  SCORE[f"#voxels_changed"] = 0
   function ~/../raycast/init
   execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
     function ~/../raycast/start
@@ -92,16 +107,18 @@ function ~/fill:
       execute run return fail
     function ~/../get_macro
     with var NBT.macro:
-      $data modify entity @s data.voxels.$(group)[$(i)] set value true
+      $execute store success score #temp pumpkin_carving.calc run data modify entity @s data.voxels.$(group)[$(i)] set value true
+    SCORE[f"#voxels_changed"] += SCORE[f"#temp"]
     function pumpkin_carving:pumpkin/voxels_to_model
     execute unless data storage pumpkin_carving:calc temp{flags:[0b]} run return:
       # all pixels were filled
       kill @s
       execute align xyz positioned ~0.5 ~0.5 ~0.5 run kill @e[type=marker,tag=pumpkin_carving.custom_pumpkin.root,distance=..0.1]
       setblock ~ ~ ~ pumpkin
+  if SCORE["#voxels_changed"] > 0:
+    function ~/../filled_success
 
 function ~/get_macro:
-  debug("get macro", SCORE[f"#raycast.hit_voxel.0"], SCORE[f"#raycast.hit_voxel.1"], SCORE[f"#raycast.hit_voxel.2"])
   for group in ModelOrdering.main_groups:
     execute if score #raycast.hit_voxel.0 pumpkin_carving.calc matches group.voxel_bounds(0) if score #raycast.hit_voxel.1 pumpkin_carving.calc matches group.voxel_bounds(1) if score #raycast.hit_voxel.2 pumpkin_carving.calc matches group.voxel_bounds(2):
       for i in range(3):
@@ -174,7 +191,6 @@ function ~/raycast:
         SCORE["#raycast.dir_vec.2"] = SCORE[f"#raycast._dir_vec.{nz-1}"]
         SCORE["#raycast.ray_start.2"] = SCORE[f"#raycast._ray_start.{nz-1}"]
 
-    debug("transform:", SCORE["#raycast.x_rot"], SCORE["#raycast.y_rot"])
     if SCORE["#raycast.y_rot"] == 0:
       if SCORE["#raycast.x_rot"] == 0:
         set_transform(-1, 2, -3)
@@ -226,16 +242,11 @@ function ~/raycast:
       for j in exclude(i):
         SCORE[f"#raycast.next_plane.{i}.min.{j}"] = int(FSCALE * -0.5)
         SCORE[f"#raycast.next_plane.{i}.max.{j}"] = int(FSCALE * 0.5)
-    # debug("dir", SCORE["#raycast.dir.0"], SCORE["#raycast.dir.1"], SCORE["#raycast.dir.2"])
     function ~/../loop
-    # debug("dist", SCORE["#raycast.next_plane.0.distance"], SCORE["#raycast.next_plane.1.distance"], SCORE["#raycast.next_plane.2.distance"])
-  
+    
   function ~/loop:
     function ~/../step
         
-    # debug("hit plane:", SCORE[f"#raycast.next_plane"])
-    # debug("hit voxel:", SCORE[f"#raycast.hit_voxel.0"], SCORE[f"#raycast.hit_voxel.1"], SCORE[f"#raycast.hit_voxel.2"])
-    # debug("next targets:", SCORE[f"#raycast.next_plane.0"], SCORE[f"#raycast.next_plane.1"], SCORE[f"#raycast.next_plane.2"])
     execute if score #raycast.hit_voxel.0 pumpkin_carving.calc matches 2..13 if score #raycast.hit_voxel.1 pumpkin_carving.calc matches 2..13 if score #raycast.hit_voxel.2 pumpkin_carving.calc matches 2..13 run return fail
     if not SCORE[f"#raycast.next_plane"] == -1:
       function ~/../../get_macro
@@ -288,7 +299,6 @@ function ~/raycast:
             axes = list(exclude(i))
             for j in axes:
               SCORE[f"#raycast.next_plane.{i}.hit.{j}"] = SCORE[f"#raycast.next_plane.{i}.distance"] * SCORE[f"#raycast.dir_vec.{j}"] / FSCALE + SCORE[f"#raycast.current.{j}"]
-            # debug(f"hit plane {i}:", SCORE[f"#raycast.next_plane.{i}.hit.{axes[0]}"], SCORE[f"#raycast.next_plane.{i}.hit.{axes[1]}"])
             if SCORE[f"#raycast.next_plane.{i}.hit.{axes[0]}"] >= SCORE[f"#raycast.next_plane.{i}.min.{axes[0]}"]:
               if SCORE[f"#raycast.next_plane.{i}.hit.{axes[0]}"] <= SCORE[f"#raycast.next_plane.{i}.max.{axes[0]}"]:
                 if SCORE[f"#raycast.next_plane.{i}.hit.{axes[1]}"] >= SCORE[f"#raycast.next_plane.{i}.min.{axes[1]}"]:
@@ -300,7 +310,6 @@ function ~/raycast:
         SCORE[f"#raycast.hit_voxel.{i}"] = SCORE[f"#raycast.next_plane.{i}"] + (SCORE[f"#raycast.dir.{i}"] * FSCALE / 32)
         for j in exclude(i):
           SCORE[f"#raycast.hit_voxel.{j}"] = SCORE[f"#raycast.next_plane.{i}.hit.{j}"]
-    # debug("hit point:", SCORE[f"#raycast.hit_voxel.0"], SCORE[f"#raycast.hit_voxel.1"], SCORE[f"#raycast.hit_voxel.2"])
     for i in range(3):
       SCORE[f"#raycast.hit_voxel.{i}"] *= 16
       SCORE[f"#raycast.hit_voxel.{i}"] /= FSCALE

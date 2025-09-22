@@ -204,7 +204,7 @@ class ModelOrdering:
 
 def beet_default(ctx):
   with ctx.generate.draft() as draft:
-    # draft.cache("pumpkin_models", "v3")
+    draft.cache("pumpkin_models", "v4")
     print("Generating models")
 
     draft.assets["pumpkin_carving:item/pumpkin"] = Model({

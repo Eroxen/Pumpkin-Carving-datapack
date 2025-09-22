@@ -1,0 +1,87 @@
+{
+  "type": "minecraft:notice",
+  "title": "How to use Pumpkin Carving",
+  "body": [
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:pumpkin"
+      },
+      "description": {
+        "text": "As you may have guessed, you'll need a ",
+        "extra": [
+          {
+            "text":"Pumpkin",
+            "color": "gold"
+          },
+          {
+            "text":" before you can start carving."
+          }
+        ]
+      }
+    },
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:iron_sword"
+      },
+      "description": {
+        "text": "Place down your pumpkin and pull out a ",
+        "extra": [
+          {
+            "text":"Sword",
+            "color": "gold"
+          },
+          {
+            "text":" of any material. If you're looking at a pumpkin while holding a sword, an invisible hitbox should appear, allowing you to click the pumpkin. Right-click with your sword to remove a single voxel."
+          }
+        ]
+      }
+    },
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:iron_axe"
+      },
+      "description": {
+        "text": "You can also use an ",
+        "extra": [
+          {
+            "text":"Axe",
+            "color": "gold"
+          },
+          {
+            "text":" to remove a 2x2x2 cube of voxels with one click (though this doesn't work on uncarved pumpkins so that you can still mine them with axes). If you left-click the custom pumpkin with an axe, it'll break and drop as an item that you can place down again or wear on your head."
+          }
+        ]
+      }
+    },
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:pumpkin_seeds"
+      },
+      "description": {
+        "text": "If you've accidentally misclicked while carving, you can use ",
+        "extra": [
+          {
+            "text":"Pumpkin Seeds",
+            "color": "gold"
+          },
+          {
+            "text":" to fill a voxel back up again."
+          }
+        ]
+      }
+    }
+  ],
+  "action": {
+    "label": {
+      "translate": "gui.done"
+    },
+    "action": {
+      "type": "minecraft:show_dialog",
+      "dialog": "pumpkin_carving:main_menu"
+    }
+  }
+}
