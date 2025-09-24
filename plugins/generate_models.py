@@ -200,6 +200,7 @@ def generate_main_groups():
 class ModelOrdering:
   main_groups = list(generate_main_groups())
   total_volume = np.sum([g.volume for g in main_groups])
+  total_groups = np.sum([g.num_descendants + 1 for g in main_groups])
 
 
 def beet_default(ctx):

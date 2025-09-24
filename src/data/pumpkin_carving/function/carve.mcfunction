@@ -2,6 +2,7 @@ from pumpkin_carving:pumpkin import CustomPumpkin, CustomPumpkinBlock
 from bolt_expressions import Scoreboard, Data
 from bolt_expressions.sources import ScoreSource, DataSource
 from plugins.generate_models import ModelOrdering
+import eroxified2:item as e2_item
 SCORE = Scoreboard("pumpkin_carving.calc")
 FSCALE = 1000
 NBT = Data.storage("pumpkin_carving:calc")
@@ -46,6 +47,13 @@ function ~/init:
 
   Scoreboard("pumpkin_carving.stats.pumpkins_carved")["@s"] += 1
 
+function ~/paste:
+  NBT.temp = Data.entity("@s").equipment.offhand.components."minecraft:custom_data".voxels
+  execute as @n[type=item_display,tag=pumpkin_carving.custom_pumpkin.display,distance=..0.1]:
+    Data.entity("@s").data.voxels = NBT.temp
+    function pumpkin_carving:pumpkin/voxels_to_model
+  playsound minecraft:block.pumpkin.carve block @a[distance=..8]
+
 function ~/carved_success:
   Scoreboard("pumpkin_carving.stats.voxels_carved")["@s"] += SCORE[f"#voxels_changed"]
   playsound minecraft:block.pumpkin.carve block @a[distance=..8]
@@ -53,6 +61,7 @@ function ~/carved_success:
 function ~/filled_success:
   Scoreboard("pumpkin_carving.stats.voxels_filled")["@s"] += SCORE[f"#voxels_changed"]
   playsound minecraft:block.mud.place block @a[distance=..8]
+  execute if predicate pumpkin_carving:survival_or_adventure run function eroxified2:item/api/decrement_mainhand
 
 function ~/carve:
   SCORE["#voxels_changed"] = 0

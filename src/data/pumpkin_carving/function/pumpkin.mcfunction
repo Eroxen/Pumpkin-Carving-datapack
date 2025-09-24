@@ -51,7 +51,7 @@ class CustomPumpkin(CustomItem):
   ]
   custom_model_data = {
     "flags": [True] * ModelOrdering.total_volume,
-    "strings": ["full"] * len(ModelOrdering.main_groups)
+    "strings": ["full"] * ModelOrdering.total_groups
   }
   custom_data = {
     "voxels": default_voxel_ds
@@ -306,6 +306,9 @@ function ~/hitbox:
     execute if entity @s[tag=pumpkin_carving.carving_hitbox] on target if predicate f"{HERE}/interactable_carve_or_fill":
       SCORE["@n[type=interaction,tag=pumpkin_carving.carving_hitbox,distance=..0.1]"] = 20
       execute align y positioned ~ ~1.5 ~:
+        execute if predicate f"{HERE}/interactable_carve_new" if block ~ ~ ~ minecraft:pumpkin if items entity @s weapon.offhand CustomPumpkin.predicate run return:
+          function pumpkin_carving:carve/init
+          function pumpkin_carving:carve/paste
         execute if block ~ ~ ~ minecraft:pumpkin run function pumpkin_carving:carve/init
         execute if predicate f"{HERE}/interactable_carve":
           execute if predicate f"{HERE}/interactable_carve_big" run return run function pumpkin_carving:carve/carve_big

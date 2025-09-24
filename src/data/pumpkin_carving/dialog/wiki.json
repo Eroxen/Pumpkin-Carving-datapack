@@ -73,6 +73,31 @@
           }
         ]
       }
+    },
+    {
+      "type": "minecraft:item",
+      "item": {
+        "id": "minecraft:bone_meal"
+      },
+      "description": {
+        "text": "Once you've carved a pumpkin you like, it is also possible to duplicate the pattern onto more pumpkins. Simply hold the ",
+        "extra": [
+          {
+            "text":"Custom Pumpkin",
+            "color": "gold"
+          },
+          {
+            "text":" in your offhand, while carving a new pumpkin with a "
+          },
+          {
+            "text":"Sword",
+            "color": "gold"
+          },
+          {
+            "text":", and the pattern will be copied."
+          }
+        ]
+      }
     }
   ],
   "action": {
