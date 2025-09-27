@@ -1,0 +1,28 @@
+name: Pumpkin Carving
+version: v3.0.0
+output: build
+
+data_pack:
+  pack_format: 81
+  description: "Carve custom pumpkins!\nBy Eroxen."
+  supported_formats: [80, 81]
+  zipped: true
+  load:
+    - src
+
+resource_pack:
+  pack_format: 64
+  description: "Carve custom pumpkins!\nBy Eroxen."
+  supported_formats: [63, 64]
+  zipped: true
+  load:
+    - src
+
+require:
+  - bolt
+  - bolt_expressions
+  - eroxified2
+
+pipeline:
+  - mecha
+  - plugins.generate_models

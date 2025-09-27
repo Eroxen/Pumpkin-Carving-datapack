@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:adventure/summon_iron_golem",
+  "display": {
+    "icon": {
+      "id": "minecraft:poisonous_potato",
+      "components": {
+        "minecraft:item_model": "pumpkin_carving:pumpkinos"
+      }
+    },
+    "title": {
+      "translate": "pumpkin_carving.advancements.gone_reduced_to_atoms.title",
+      "fallback": "Gone, Reduced to Atoms"
+    },
+    "description": {
+      "translate": "pumpkin_carving.advancements.gone_reduced_to_atoms.description",
+      "fallback": "Remove every single voxel from a Pumpkin"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "requirement": {
+      "trigger": "minecraft:impossible",
+      "conditions": {}
+    }
+  },
+  "rewards": {
+    "experience": 100
+  }
+}
